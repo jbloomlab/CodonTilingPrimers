@@ -107,196 +107,96 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon):
 
     Returns a list of all these primers as *(name, sequence)* 2-tuples.
     """
+    uppertemplimit = float(sys.argv[3])
+    lowertemplimit = float(sys.argv[2])
+    maxlength = float(sys.argv[5])
+    minlength = float(sys.argv[4])
     n = len(seq)
     assert primerlength % 2 == 1, "primer length not odd"
-    flanklength = (primerlength - 3) // 2
+    initial_flanklength = (primerlength - 3) // 2
     upperseq = ''.join([nt for nt in seq if nt.istitle()])
     assert upperseq in seq, "upper case nucleotides not substring"
     assert len(upperseq) % 3 == 0, "length of upper case not multiple of 3"
     startupper = seq.index(upperseq)
-    if startupper < flanklength:
+    if startupper < initial_flanklength:
         raise ValueError("not enough 5' lower case flanking nucleotides")
-    if n - len(upperseq) - startupper < flanklength:
+    if n - len(upperseq) - startupper < initial_flanklength:
         raise ValueError("not enough 3' lower case flanking nucleotides")
     ncodons = len(upperseq) // 3
     primers = []
     for icodon in range(ncodons):
         i = startupper + icodon * 3
-        primer = "%sNNN%s" % (seq[i - flanklength : i], seq[i + 3 : i + 3 + flanklength])
+        primer = "%sNNN%s" % (seq[i - initial_flanklength : i], seq[i + 3 : i + 3 + initial_flanklength]) 
         name = "%s-for-mut%d" % (prefix, firstcodon + icodon)
         primerseq = Seq(primer)
-        TmGC = ('%0.2f' % mt.Tm_GC(primerseq, strict=False)) #I won't be using this
-        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) # I will use this
+        
+        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) 
         print name
         print primer
+        print "Original primer has Tm of:"
         print TmNN
-        if float(TmNN) > float(61):
-            print "Original %s bp primer has Tm is greater than 61C" % (primerlength) 
-            #subtract nucleotides 5 prime then 3 prime
-            primer = "%sNNN%s" % (seq[i - (flanklength-1) : i], seq[i + 3 : i + 3 + flanklength]) #take off 5 prime nt
-            primerseq = Seq(primer)
-            TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) # I will use this
-            if float(TmNN) > float(61):
-                primer = "%sNNN%s" % (seq[i - (flanklength-1) : i], seq[i + 3 : i + 3 + (flanklength-1)]) #take off 5 prime nt
+        add_3 = True
+        minus_5 = True
+        flank5 = flank3 = initial_flanklength
+        if float(TmNN) > float(uppertemplimit):
+            while float(TmNN) > float(uppertemplimit) and len(primer) > minlength:
+                if minus_5:
+                    flank5 -= 1
+                    primer = "%sNNN%s" % (seq[i - (flank5) : i], seq[i + 3 : i + 3 + flank3])
+                    minus_5 = False
+                else:
+                    flank3 -= 1
+                    primer =  "%sNNN%s" % (seq[i - (flank5) : i], seq[i + 3 : i + 3 + flank3])
+
+                    minus_5 = True
+                if startupper < flank5:
+                    raise ValueError("not enough 5' lower case flanking nucleotides")
+                if n - len(upperseq) - startupper < flank3:
+                    raise ValueError("not enough 3' lower case flanking nucleotides") #not sure if this is correct!
+
+                
                 primerseq = Seq(primer)
-                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) # I will use this
-                if float(TmNN) > float(61):
-                    primer = "%sNNN%s" % (seq[i - (flanklength-2) : i], seq[i + 3 : i + 3 + (flanklength-1)]) #take off 5 prime nt
-                    primerseq = Seq(primer)
-                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                    if float(TmNN) > float(61):
-                        primer = "%sNNN%s" % (seq[i - (flanklength-2) : i], seq[i + 3 : i + 3 + (flanklength-2)]) #take off 5 prime nt
-                        primerseq = Seq(primer)
-                        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                        #print "primer is 33 bp long: the minimum length and has a Tm of %s" % (TmNN)
-                        if float(TmNN) > float(61):
-                            primer = "%sNNN%s" % (seq[i - (flanklength-3) : i], seq[i + 3 : i + 3 + (flanklength-2)]) #take off 5 prime nt
-                            primerseq = Seq(primer)
-                            TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                            #this last step needs to be rechecked. 
-                            if float(TmNN) > float(61):
-                                primer = "%sNNN%s" % (seq[i - (flanklength-3) : i], seq[i + 3 : i + 3 + (flanklength-3)]) #take off 5 prime nt
-                                primerseq = Seq(primer)
-                                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                #print "primer is 31 bp long: the minimum length and has a Tm of %s" % (TmNN)
-                                if float(TmNN) > float(61):
-                                    primer = "%sNNN%s" % (seq[i - (flanklength-4) : i], seq[i + 3 : i + 3 + (flanklength-3)]) #take off 5 prime nt
-                                    primerseq = Seq(primer)
-                                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                    if float(TmNN) > float(61):
-                                        primer = "%sNNN%s" % (seq[i - (flanklength-4) : i], seq[i + 3 : i + 3 + (flanklength-4)]) #take off 5 prime nt
-                                        primerseq = Seq(primer)
-                                        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                        #print "primer is 29 bp long: the minimum length and has a Tm of %s" % (TmNN)
-                                        if float(TmNN) > float(61):
-                                            primer = "%sNNN%s" % (seq[i - (flanklength-5) : i], seq[i + 3 : i + 3 + (flanklength-4)]) #take off 5 prime nt
-                                            primerseq = Seq(primer)
-                                            TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                            if float(TmNN) > float(61):
-                                                primer = "%sNNN%s" % (seq[i - (flanklength-5) : i], seq[i + 3 : i + 3 + (flanklength-5)]) #take off 5 prime nt
-                                                primerseq = Seq(primer)
-                                                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                #print "primer is 27 bp long: the minimum length and has a Tm of %s" % (TmNN)
-                                                if float(TmNN) > float(61):
-                                                    primer = "%sNNN%s" % (seq[i - (flanklength-6) : i], seq[i + 3 : i + 3 + (flanklength-5)]) #take off 5 prime nt
-                                                    primerseq = Seq(primer)
-                                                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                    if float(TmNN) > float(61):
-                                                        primer = "%sNNN%s" % (seq[i - (flanklength-6) : i], seq[i + 3 : i + 3 + (flanklength-6)]) #take off 5 prime nt
-                                                        primerseq = Seq(primer)
-                                                        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                        print "primer is 25 bp long: the minimum length and has a Tm of %s" % (TmNN)
-                                                        # if float(TmNN) > float(62):
-                                                        # primer = "%sNNN%s" % (seq[i - (flanklength-7) : i], seq[i + 3 : i + 3 + (flanklength-6)]) #take off 5 prime nt
-                                                        # primerseq = Seq(primer)
-                                                        # TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                        #     if float(TmNN) > float(62):
-                                                        #         primer = "%sNNN%s" % (seq[i - (flanklength-7) : i], seq[i + 3 : i + 3 + (flanklength-7)]) #take off 5 prime nt
-                                                        #         primerseq = Seq(primer)
-                                                        #         TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                        #         #print "primer is 23 bp long: the minimum length and has a Tm of %s" % (TmNN)
-                                                        #         if float(TmNN) > float(62):
-                                                        #             primer = "%sNNN%s" % (seq[i - (flanklength-8) : i], seq[i + 3 : i + 3 + (flanklength-7)]) #take off 5 prime nt
-                                                        #             primerseq = Seq(primer)
-                                                        #             TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                        #             if float(TmNN) > float(62):
-                                                        #                 primer = "%sNNN%s" % (seq[i - (flanklength-8) : i], seq[i + 3 : i + 3 + (flanklength-8)]) #take off 5 prime nt
-                                                        #                 primerseq = Seq(primer)
-                                                        #                 TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                        #                 print "primer is 21 bp long: the minimum length and has a Tm of %s" % (TmNN)
-                    
-            newprimerlength = len(primer)
-            
-            print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, newprimerlength, TmNN)
+                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) 
+                primerlength= len(primer)
+            print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, primerlength, TmNN)
             print primer
-            if float(TmNN) < float(60):
-                print "WARNING: primer trimmed to Tm below 60C"
-
-            
             print "\n"
-             
-        
-        
         else: 
-        #if it is not greater than 61, then check if its less than 60 (then add primers to get above 60). If it's between 60 and 61 
-            if float(TmNN) < float(60):
-                #add nucleotides 3 prime then 5 prime
-                print "original %s bp primer has Tm is less than 60C" % (primerlength)
-                
-                primer = "%sNNN%s" % (seq[i - (flanklength) : i], seq[i + 3 : i + 3 + flanklength+1]) #take off 5 prime nt
-                primerseq = Seq(primer)
-                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) # I will use this
-                if float(TmNN) < float(60):
-                    primer = "%sNNN%s" % (seq[i - (flanklength+1) : i], seq[i + 3 : i + 3 + (flanklength+1)]) #take off 5 prime nt
+            if float(TmNN) < float(lowertemplimit):
+                while float(TmNN) < float(lowertemplimit) and len(primer) < maxlength:
+                    if add_3:
+                        flank3 += 1
+                        primer = "%sNNN%s" % (seq[i - (flank5) : i], seq[i + 3 : i + 3 + flank3])
+                        add_3 = False
+                    else:
+                        flank5 +=1
+                        primer = "%sNNN%s" % (seq[i - (flank5) : i], seq[i + 3 : i + 3 + flank3])
+                        add_3 = True    
                     primerseq = Seq(primer)
-                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) # I will use this
-                    if float(TmNN) < float(60):
-                        primer = "%sNNN%s" % (seq[i - (flanklength+1) : i], seq[i + 3 : i + 3 + (flanklength+2)]) #take off 5 prime nt
-                        primerseq = Seq(primer)
-                        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
+                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) 
+                    primerlength= len(primer)
+                    if startupper < flank5:
+                        raise ValueError("not enough 5' lower case flanking nucleotides")
+                    if n - len(upperseq) - startupper < flank3:
+                        raise ValueError("not enough 3' lower case flanking nucleotides") 
+                print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, primerlength, TmNN)
+                print primer
+                print "\n"
 
-                        if float(TmNN) < float(60):
-                            primer = "%sNNN%s" % (seq[i - (flanklength+2) : i], seq[i + 3 : i + 3 + (flanklength+2)]) #take off 5 prime nt
-                            primerseq = Seq(primer)
-                            TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                            #print "primer is 41 bp long: the max length and has a Tm of %s" % (TmNN)
-                            if float(TmNN) < float(60):
-                                primer = "%sNNN%s" % (seq[i - (flanklength+2) : i], seq[i + 3 : i + 3 + (flanklength+3)]) #take off 5 prime nt
-                                primerseq = Seq(primer)
-                                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                if float(TmNN) < float(60):
-                                    primer = "%sNNN%s" % (seq[i - (flanklength+3) : i], seq[i + 3 : i + 3 + (flanklength+3)]) #take off 5 prime nt
-                                    primerseq = Seq(primer)
-                                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                    if float(TmNN) < float(60):
-                                        primer = "%sNNN%s" % (seq[i - (flanklength+3) : i], seq[i + 3 : i + 3 + (flanklength+4)]) #take off 5 prime nt
-                                        primerseq = Seq(primer)
-                                        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                        if float(TmNN) < float(60):
-                                            primer = "%sNNN%s" % (seq[i - (flanklength+4) : i], seq[i + 3 : i + 3 + (flanklength+4)]) #take off 5 prime nt
-                                            primerseq = Seq(primer)
-                                            TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                            #print "primer is 45 bp long: the max length and has a Tm of %s" % (TmNN)
-                                            if float(TmNN) < float(60):
-                                                primer = "%sNNN%s" % (seq[i - (flanklength+4) : i], seq[i + 3 : i + 3 + (flanklength+5)]) #take off 5 prime nt
-                                                primerseq = Seq(primer)
-                                                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                if float(TmNN) < float(60):
-                                                    primer = "%sNNN%s" % (seq[i - (flanklength+5) : i], seq[i + 3 : i + 3 + (flanklength+5)]) #take off 5 prime nt
-                                                    primerseq = Seq(primer)
-                                                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                    #print "primer is 47 bp long: the max length and has a Tm of %s" % (TmNN)
-                                                    if float(TmNN) < float(60):
-                                                        primer = "%sNNN%s" % (seq[i - (flanklength+5) : i], seq[i + 3 : i + 3 + (flanklength+6)]) #take off 5 prime nt
-                                                        primerseq = Seq(primer)
-                                                        TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                        if float(TmNN) < float(60):
-                                                            primer = "%sNNN%s" % (seq[i - (flanklength+6) : i], seq[i + 3 : i + 3 + (flanklength+6)]) #take off 5 prime nt
-                                                            primerseq = Seq(primer)
-                                                            TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                            #print "primer is 49 bp long: the max length and has a Tm of %s" % (TmNN)
-                                                            if float(TmNN) < float(60):
-                                                                primer = "%sNNN%s" % (seq[i - (flanklength+6) : i], seq[i + 3 : i + 3 + (flanklength+7)]) #take off 5 prime nt
-                                                                primerseq = Seq(primer)
-                                                                TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                                if float(TmNN) < float(60):
-                                                                    primer = "%sNNN%s" % (seq[i - (flanklength+7) : i], seq[i + 3 : i + 3 + (flanklength+7)]) #take off 5 prime nt
-                                                                    primerseq = Seq(primer)
-                                                                    TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False))
-                                                                    print "primer is 51 bp long: the max length and has a Tm of %s" % (TmNN)
-                            
-                newprimerlength = len(primer)
-                
-                print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, newprimerlength, TmNN)
-                print primer
-                if float(TmNN) > float(62):
-                    print "WARNING: primer extended to a Tm above 62C"
-                print "\n"
             else:
-                print "Origina %s bp primer %s has a Tm of %s. This is between 60 and 61C and doesn't require any trimming. The sequence is:" % (primerlength, name, TmNN)
+                print "Original %s bp primer %s has a Tm of %s. This is between 60 and 61C and doesn't require any trimming. The sequence is:" % (primerlength, name, TmNN)
                 print primer
                 print "\n"
-        #    pass
+
+
+
+
+
+
+
+
+ 
+
 
 
 
@@ -305,10 +205,15 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon):
     return primers
 
 
+
 def main():
     args = sys.argv[1 : ]
-    if len(args) != 1:
-        raise IOError("Script must be run with one argument specifying the file name.")
+    uppertemplimit = float(sys.argv[3])
+    lowertemplimit = float(sys.argv[2])
+    maxlength = float(sys.argv[5])
+    minlength = float(sys.argv[4])
+    if len(args) != 5:
+        raise IOError("Script must be run with five arguments specifying the file name, minimum primer Tm, maximum primer Tm, minimum primer length, and maximum prmer length.")
     infilename = sys.argv[1]
     if not os.path.isfile(infilename):
         raise IOError("Cannot find infile of %s" % infilename)
@@ -322,11 +227,11 @@ def main():
         if key in d:
             raise ValueError("Duplicate key of %s" % key)
         d[key] = value
-    primerlength = int(d['primerlength'])
-    #startprimerlength = int(d['primerlength'] #AD ADD
+    primerlength = int(d['startprimerlength'])
+
     if (primerlength <=3 ) or (primerlength % 2 == 0):
         raise ValueError("Does not appear to be valid primer length: %d" % primerlength)
-    print "Designing primers first of  length %d, then trimming or adding to have 60 < Tm <62 but primer length between 25 and 49 bps" % primerlength #CHANGE THIS OUTPRINT
+    print "Designing primers first of  length %d, then trimming or adding to have %s < Tm <%s but primer length between %s and %s bps" % (primerlength, lowertemplimit, uppertemplimit, minlength, maxlength)
     sequencefile = d['sequencefile']
     if not os.path.isfile(sequencefile):
         raise IOError("Cannot find sequencefile %s" % sequencefile)
@@ -342,11 +247,7 @@ def main():
     # Design forward mutation primers
     mutforprimers = CreateMutForOligosVarLength(sequence, primerlength, primerprefix, firstcodon)
     print "Designed %d mutation forward primers." % len(mutforprimers)
-    #AD I will first start by generating mutprimers of 37 bp length, then adding or trimming to get to 60C
-    #for primers that are to low, I will first add  one bp on the 3 prime end, then add on the 5 primer end etc until I get to 60C
-    #for primers that are too high, I will take on bp away from 5 prime end, check, then take off 3 prime end, check, etc. 
 
-    
 
     
     # Design reverse mutation primers
@@ -356,6 +257,8 @@ def main():
     # Print out all of the primers
     primers = mutforprimers + mutrevprimers
     print "This gives a total of %d primers." % len(primers)
+
+
     print "\nNow writing these primers to %s" % outfile
     iplate = 1
     f = open(outfile, 'w')
