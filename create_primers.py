@@ -11,6 +11,9 @@ If the ORIGINAL primer has a Tm less than 60C, then nucelotides are added one by
 If the ORIGINAL primer has a Tm of less than 61C but greater than 60C, it is not altered. 
 The primers are constrained to be between 25 and 51 bps long. Some 51 bp primers may not be > 60C, and some 25 bp primers may not be < 61C.
 
+For command line arguments, run::
+
+    python create_primers.py -h
 
 The  Tm_NN command of the MeltingTemp Module of Biopython (http://biopython.org/DIST/docs/api/Bio.SeqUtils.MeltingTemp-module.html) is used to calculate Tm of primers. 
 This calculation is based on nearest neighbor thermodynamics. nucelotides labeled N are given average values in the Tm calculation. 
@@ -20,10 +23,24 @@ It is possible to vary salt concentration and other addatives if needed."""
 import os
 import sys
 import math
+import re
+import argparse
 from Bio.SeqUtils import MeltingTemp as mt
 from Bio.Seq import Seq
-import re
 
+
+def Parser():
+    """Returns command line parser."""
+    parser = argparse.ArgumentParser(
+            description='Script by Adam Dingens and Jesse Bloom to design codon tiling primers with specific melting temperatures.',
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+            )
+    parser.add_argument('infilename', help="input file")
+    parser.add_argument('--uppertemplimit', type=float, help="Upper temperature limit for primers.", default=60)
+    parser.add_argument('--lowertemplimit', type=float, help="Upper temperature limit for primers.", default=61)
+    parser.add_argument('--maxlength', type=int, help='Maximum primer length', default=51)
+    parser.add_argument('--minlength', type=int, help='Minimum primer length', default=25)
+    return parser
 
 
 def ReverseComplement(seq):
@@ -81,8 +98,7 @@ def CreateMutForOligos(seq, primerlength, prefix, firstcodon):
     return primers
 
 
-def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon):
-
+def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, uppertemplimit, lowertemplimit, maxlength, minlength):
     """Creates oligos to tile a gene and introduce NNN at each codon.
 
     *seq* : sequence of the gene. The gene itself should be upper case. The
@@ -107,10 +123,6 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon):
 
     Returns a list of all these primers as *(name, sequence)* 2-tuples.
     """
-    uppertemplimit = float(sys.argv[3])
-    lowertemplimit = float(sys.argv[2])
-    maxlength = float(sys.argv[5])
-    minlength = float(sys.argv[4])
     n = len(seq)
     assert primerlength % 2 == 1, "primer length not odd"
     initial_flanklength = (primerlength - 3) // 2
@@ -187,19 +199,6 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon):
                 print "Original %s bp primer %s has a Tm of %s. This is between 60 and 61C and doesn't require any trimming. The sequence is:" % (primerlength, name, TmNN)
                 print primer
                 print "\n"
-
-
-
-
-
-
-
-
- 
-
-
-
-
         primers.append((name, primer))
     #print primers 
     return primers
@@ -207,17 +206,14 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon):
 
 
 def main():
-    args = sys.argv[1 : ]
-    uppertemplimit = float(sys.argv[3])
-    lowertemplimit = float(sys.argv[2])
-    maxlength = float(sys.argv[5])
-    minlength = float(sys.argv[4])
-    if len(args) != 5:
-        raise IOError("Script must be run with five arguments specifying the file name, minimum primer Tm, maximum primer Tm, minimum primer length, and maximum prmer length.")
-    infilename = sys.argv[1]
-    if not os.path.isfile(infilename):
-        raise IOError("Cannot find infile of %s" % infilename)
-    inlines = [line for line in open(infilename).readlines() if not line.isspace() and line[0] != '#']
+    parser = Parser()
+    args = vars(parser.parse_args())
+
+    print("Read the following command line arguments")
+    for (argname, argvalue) in args.items():
+        print("\t%s = %s" % (argname, argvalue))
+
+    inlines = [line for line in open(args['infilename']).readlines() if not line.isspace() and line[0] != '#']
     d = {}
     for line in inlines:
         entries = line.split(None, 1)
@@ -231,7 +227,6 @@ def main():
 
     if (primerlength <=3 ) or (primerlength % 2 == 0):
         raise ValueError("Does not appear to be valid primer length: %d" % primerlength)
-    print "Designing primers first of  length %d, then trimming or adding to have %s < Tm <%s but primer length between %s and %s bps" % (primerlength, lowertemplimit, uppertemplimit, minlength, maxlength)
     sequencefile = d['sequencefile']
     if not os.path.isfile(sequencefile):
         raise IOError("Cannot find sequencefile %s" % sequencefile)
@@ -245,7 +240,7 @@ def main():
     print "The primers will be named with the prefix %s, and the first codon numbered as %d." % (primerprefix, firstcodon)
 
     # Design forward mutation primers
-    mutforprimers = CreateMutForOligosVarLength(sequence, primerlength, primerprefix, firstcodon)
+    mutforprimers = CreateMutForOligosVarLength(sequence, primerlength, primerprefix, firstcodon, args['uppertemplimit'], args['lowertemplimit'], args['maxlength'], args['minlength'])
     print "Designed %d mutation forward primers." % len(mutforprimers)
 
 
