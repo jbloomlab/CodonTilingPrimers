@@ -5,11 +5,11 @@ Primers containing an NNN codon at their center are tiled along a gene.
 Jesse Bloom, 2013. 
 
 Edited by Adam Dingens Nov 2015 to generate primers of differing lengths to all have a Tm of ~60C. Notes on edits below. 
-This script first makes an ORIGINAL primer of specified length  according to the infile (usually 37 bps). 
-If the ORIGINAL primer has a Tm of greater than 61C, then nucleotides are trimmed off one by one (first 5', then 3', then 5' etc) until the Tm is less than 61C (which could result in less than 60C primer).
-If the ORIGINAL primer has a Tm less than 60C, then nucelotides are added one by one (first 3', then 5', then 3' etc) until the Tm is over 60C.
-If the ORIGINAL primer has a Tm of less than 61C but greater than 60C, it is not altered. 
-The primers are constrained to be between 25 and 51 bps long. Some 51 bp primers may not be > 60C, and some 25 bp primers may not be < 61C.
+This script first makes an ORIGINAL primer of specified length (default 37 bps). 
+If the ORIGINAL primer has a Tm of greater than MaxPrimerTm, then nucleotides are trimmed off one by one (first 5', then 3', then 5' etc) until the Tm is less than MaxPrimerTm. Note that this could be over a degree less than the MaxPrimerTm. 
+If the ORIGINAL primer has a Tm less than MinPrimerTm, then nucelotides are added one by one (first 3', then 5', then 3' etc) until the Tm is over MinPrimerTm. Note that this could be over a degree more than the MinPrimerTm
+If the ORIGINAL primer has a Tm of less than MaxPrimerTm but greater than MinPrimerTm, it is not altered. 
+The primers are constrained to be between MinPrimerlength and MaxPrimerLength bps long. The Tm of some MaxPrimerLength primers may not be > MinPrimerTemp, and the Tm of some MinPrimerLength primers may not be < MaxPrimerTm.
 
 For command line arguments, run::
 
@@ -35,11 +35,16 @@ def Parser():
             description='Script by Adam Dingens and Jesse Bloom to design codon tiling primers with specific melting temperatures.',
             formatter_class=argparse.ArgumentDefaultsHelpFormatter,
             )
-    parser.add_argument('infilename', help="input file")
-    parser.add_argument('--uppertemplimit', type=float, help="Upper temperature limit for primers.", default=60)
-    parser.add_argument('--lowertemplimit', type=float, help="Upper temperature limit for primers.", default=61)
-    parser.add_argument('--maxlength', type=int, help='Maximum primer length', default=51)
+
+    parser.add_argument('sequencefile', help="the name of a file giving the sequence for which we are designing the primers. This file should only contain the sequence, and should not have any headers or other content. For the sequence, make the 5' and 3' ends that you do not want to mutate in lower case. Make the portion of the coding sequence that you want to tile with *NNN* in upper case. Typically, for example, you would not want to mutate the initial start codon, so the first *atg* would be lower case. You must have at least *(startprimerlength - 3) / 2* nucleotides in lower case at each end of the upper case sequence that you are mutating. This is because at least this much flanking sequence is needed to design primers of the indicated length; more sequence may be required if the primer at either end is extended beyond the startprimerlength.")
+    parser.add_argument('primerprefix', help="prefix name to be added to each primer")
+    parser.add_argument('firstcodon', type=int, help='first codon in infile to mutagenize')
+    parser.add_argument('outfile', help='name of primer output file')
+    parser.add_argument('--startprimerlength', type=int, help='starting primer length', default=37)
+    parser.add_argument('--maxprimertm', type=float, help="Upper temperature limit for primers.", default=61)
+    parser.add_argument('--minprimertm', type=float, help="Lower temperature limit for primers.", default=60)
     parser.add_argument('--minlength', type=int, help='Minimum primer length', default=25)
+    parser.add_argument('--maxlength', type=int, help='Maximum primer length', default=51)
     return parser
 
 
@@ -98,7 +103,7 @@ def CreateMutForOligos(seq, primerlength, prefix, firstcodon):
     return primers
 
 
-def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, uppertemplimit, lowertemplimit, maxlength, minlength):
+def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, maxprimertm, minprimertm, maxlength, minlength):
     """Creates oligos to tile a gene and introduce NNN at each codon.
 
     *seq* : sequence of the gene. The gene itself should be upper case. The
@@ -143,15 +148,15 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, uppertemp
         primerseq = Seq(primer)
         
         TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) 
-        print name
-        print primer
-        print "Original primer has Tm of:"
-        print TmNN
+        #print name
+        #print primer
+        #print "Original primer has Tm of:"
+        #print TmNN
         add_3 = True
         minus_5 = True
         flank5 = flank3 = initial_flanklength
-        if float(TmNN) > float(uppertemplimit):
-            while float(TmNN) > float(uppertemplimit) and len(primer) > minlength:
+        if float(TmNN) > float(maxprimertm):
+            while float(TmNN) > float(maxprimertm) and len(primer) > minlength:
                 if minus_5:
                     flank5 -= 1
                     primer = "%sNNN%s" % (seq[i - (flank5) : i], seq[i + 3 : i + 3 + flank3])
@@ -170,12 +175,12 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, uppertemp
                 primerseq = Seq(primer)
                 TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) 
                 primerlength= len(primer)
-            print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, primerlength, TmNN)
-            print primer
-            print "\n"
+            #print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, primerlength, TmNN)
+            #print primer
+            #print "\n"
         else: 
-            if float(TmNN) < float(lowertemplimit):
-                while float(TmNN) < float(lowertemplimit) and len(primer) < maxlength:
+            if float(TmNN) < float(minprimertm):
+                while float(TmNN) < float(minprimertm) and len(primer) < maxlength:
                     if add_3:
                         flank3 += 1
                         primer = "%sNNN%s" % (seq[i - (flank5) : i], seq[i + 3 : i + 3 + flank3])
@@ -191,14 +196,15 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, uppertemp
                         raise ValueError("not enough 5' lower case flanking nucleotides")
                     if n - len(upperseq) - startupper < flank3:
                         raise ValueError("not enough 3' lower case flanking nucleotides") 
-                print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, primerlength, TmNN)
-                print primer
-                print "\n"
+                #print "Redesigned %s has a length of %s and a Tm of %s and the sequence is:" % (name, primerlength, TmNN)
+                #print primer
+                #print "\n"
 
             else:
-                print "Original %s bp primer %s has a Tm of %s. This is between 60 and 61C and doesn't require any trimming. The sequence is:" % (primerlength, name, TmNN)
-                print primer
-                print "\n"
+                pass
+                #print "Original %s bp primer %s has a Tm of %s. This is between %s and %s and doesn't require any trimming. The sequence is:" % (primerlength, name, TmNN, minprimertm, maxprimertm)
+                #print primer
+                #print "\n"
         primers.append((name, primer))
     #print primers 
     return primers
@@ -213,34 +219,26 @@ def main():
     for (argname, argvalue) in args.items():
         print("\t%s = %s" % (argname, argvalue))
 
-    inlines = [line for line in open(args['infilename']).readlines() if not line.isspace() and line[0] != '#']
-    d = {}
-    for line in inlines:
-        entries = line.split(None, 1)
-        if len(entries) != 2:
-            raise ValueError("Line does not specify a key and a value:\n%s" % line)
-        (key, value) = (entries[0].strip(), entries[1].strip())
-        if key in d:
-            raise ValueError("Duplicate key of %s" % key)
-        d[key] = value
-    primerlength = int(d['startprimerlength'])
+
+    primerlength = args['startprimerlength']
 
     if (primerlength <=3 ) or (primerlength % 2 == 0):
         raise ValueError("Does not appear to be valid primer length: %d" % primerlength)
-    sequencefile = d['sequencefile']
+    
+    sequencefile = args['sequencefile']
     if not os.path.isfile(sequencefile):
         raise IOError("Cannot find sequencefile %s" % sequencefile)
-    sequence = open(sequencefile).read()
+    sequence = open(sequencefile).read() 
     sequence = sequence.replace(' ', '')
     sequence = sequence.replace('\n', '')
     print "Read a sequence of length %d from %s:\n%s" % (len(sequence), sequencefile, sequence)
-    outfile = d['outfile']
-    primerprefix = d['primerprefix']
-    firstcodon = int(d['firstcodon'])
+    outfile = args['outfile']
+    primerprefix = args['primerprefix']
+    firstcodon =  args['firstcodon']
     print "The primers will be named with the prefix %s, and the first codon numbered as %d." % (primerprefix, firstcodon)
 
     # Design forward mutation primers
-    mutforprimers = CreateMutForOligosVarLength(sequence, primerlength, primerprefix, firstcodon, args['uppertemplimit'], args['lowertemplimit'], args['maxlength'], args['minlength'])
+    mutforprimers = CreateMutForOligosVarLength(sequence, primerlength, primerprefix, firstcodon, args['maxprimertm'], args['minprimertm'], args['maxlength'], args['minlength'])
     print "Designed %d mutation forward primers." % len(mutforprimers)
 
 

@@ -22,44 +22,46 @@ It is possible to vary salt concentration and other addatives if needed.
 
 Running the script
 -------------------------
+
 The script can be run with Python 2. It has been tested with version 2.6, but will probably work with other versions.
 
-To run the script, create an input file with the format described below, and give the infile (see below), MinPrimerTm, MaxPrimerTm, MinPrimerLength, and MaxPrimerLength as arguments in that order. Make sure this input file and the files that it references into the same directory as the script, and then run the script. This script is distributed with an example input file named *EN72-HA_infile.txt*. To run that example, use the following command::
+To run the script, command line arguments for the sequencefile, primerprefix, firstcodon, and outfile must be given in that order (see below). Make sure this input sequencefile is in the same directory as the script, and then run the script. This script is distributed with an example input file named *EN72-HA_infile.txt*. To run that example, use the following command::
 
-    python create_primers.py EN72-HA_infile.txt 60 61 25 51 
+    python create_primers.py EN72-HA.txt EN72 2 En72-HA_primers.txt
 
-This will create the output file *EN72-HA_primers.txt* which lists all of the primers, each with Tms around 60-61C, with a minimum length of 25 bp and a maximum length of 51 bp. 
+This will create the output file *EN72-HA_primers.txt* which lists all of the primers, each with Tms around 60-61C, with a minimum length of 25 bp and a maximum length of 51 bp. These sepcifications are from the default parameters, which are specified below for startprimerlength, minprimertm, maxprimertm, minlength, and maxlength.
 Note that there are primers with Tms less that MinPrimerTm and more than MaxPrimerTm due to either length limitations or instances when trimming a primer resulted in a large increase or decrease in Tm past the MinPrimerTm or MaxPrimerTm respectively. 
-You can create a similar input file for your analysis.
+
+Non-default parameters can be used by specifying so in the command line with additional arguments, specifying which parameter will be changed from the default as seen below:
+
+	python create_primers.py EN72-HA.txt EN72 2 EN72-HA_primers.txt --minprimertm=65 --maxprimertm=66
+
+This will create the output file as above, but the primer melting temperature between 65C and 66C. 
 
 
-Format of the input file
---------------------------
 
-The input file is in text format. Any blank lines or lines beginning with *#* are ignored (the latter allows for comment lines). All other lines should in the format *key value* where *key* is one of the strings listed below and *value* is the value assigned to that key. The required *key* values are:
+Description of command line arguments
+-------------------------------------
 
-* *primerlength* the length of the primers to create. An *NNN* will be placed in the middle of the primer. The primer length must be odd so that there will be the same number of flanking nucleotides on each side of the *NNN*.
 
-* *sequencefile* is the name of a file giving the sequence for which we are designing the primers. This file should only contain the sequence, and should not have any headers or other content. For the sequence, make the 5' and 3' ends that you do not want to mutate in lower case. Make the portion of the coding sequence that you want to tile with *NNN* in upper case. Typically, for example, you would not want to mutate the initial start codon, so the first *atg* would be lower case. You must have at least *(primerlength - 3) / 2* nucleotides in lower case at each end of the upper case sequence that you are mutating. This is because at least this much flanking sequence is needed to design primers of the indicated length.
-
-* *outfile* is the name of the output file that we create which lists all of the primers. This file is overwritten if it already exists.
+* *sequencefile* is the name of a file giving the sequence for which we are designing the primers. This file should only contain the sequence, and should not have any headers or other content. For the sequence, make the 5' and 3' ends that you do not want to mutate in lower case. Make the portion of the coding sequence that you want to tile with *NNN* in upper case. Typically, for example, you would not want to mutate the initial start codon, so the first *atg* would be lower case. You must have at least *(startprimerlength - 3) / 2* nucleotides in lower case at each end of the upper case sequence that you are mutating. This is because at least this much flanking sequence is needed to design primers of the indicated length; more sequence may be required if the primer at either end is extended beyond the startprimerlength.
 
 * *primerprefix* is the prefix attached to the primer names.
 
 * *firstcodon* is the number of the first codon being mutated. This is used for naming the primers.
 
+* *outfile* is the name of the output file that we create which lists all of the primers. This file is overwritten if it already exists.
 
-Example input file
--------------------
+* *startprimerlength* (Default: 37) the length of the first primer to created by the program, which is than lengthened or shortened to the specified melting temperature. An *NNN* will be placed in the middle of the primer. The primer length must be odd so that there will be the same number of flanking nucleotides on each side of the *NNN*.
 
-Here is an example input file::
+* *minprimertm* (Default: 60) is the melting temperature (C) that primers will be increased to if they are below by adding 1 nucleotide at a time, starting on the 3' end.
 
-    # input file to the create_primers.py script of CodonTilingPrimers
-    startprimerlength 37
-    sequencefile EN72-HA.txt
-    outfile EN72-HA_primers.txt
-    primerprefix EN72
-    firstcodon 2
+* *maxprimertm* (Default: 61) is the melting temperature (C) that primers will be decreased to if they are above by removing 1 nucleotide at a time, starting on the 5' end.
+
+* *minlength* (Default: 25) is the minimum nucleotide length a primer is allowed to be. 
+
+* *minlength* (Default: 51) is the maximum nucleotide length a primer is allowed to be. 
+
 
 
 Output of the script
