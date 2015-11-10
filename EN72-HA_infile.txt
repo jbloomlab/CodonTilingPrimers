@@ -1,6 +1,0 @@
-# input file to the create_primers.py script of CodonTilingPrimers
-startprimerlength 37
-sequencefile EN72-HA.txt
-outfile EN72-HA_primers.txt
-primerprefix EN72
-firstcodon 2
