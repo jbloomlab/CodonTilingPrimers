@@ -12,7 +12,7 @@ Such libraries are useful for experiments such as `deep mutational scanning <htt
 The script described below can design primers for a codon mutagenesis protocol used in the Bloom lab.
 This protocol randomly mutates each codon to all other possible codons.
 
-The protocol was originally described in `Bloom (2014) <https://doi.org/10.1093/molbev/msu173>`_, and the methods section of that paper goes over the protocol in quite a bit of detail. Additionally, `here are Jesse's lab notes <JesseLabNotes.pdf>`_ for the codon mutagenesis experiments described in that paper.
+The protocol was originally described in `Bloom (2014) <https://doi.org/10.1093/molbev/msu173>`_, and the methods section of that paper goes over the protocol in quite a bit of detail. Additionally, `here are Jesse's lab notes <JesseLabNotes.pdf>`_ for the codon mutagenesis experiments described in that paper. `Here is a schematic from Hugh Haddox <HughSchematic.pdf>`_ that graphically illustrates the process from `his paper on making libraries of HIV Env <https://doi.org/10.1371/journal.ppat.1006114>`_.
 
 The protocol was subsequently improved by Adam Dingens by making the primers have roughly equal melting temperatures rather than equal lengths.
 We think that Adam's modification to use more equal melting temperatures improves the protocol by making the rate of mutation more uniform across the gene.
