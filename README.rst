@@ -32,7 +32,7 @@ This means that some of your variants will have single mutations, will some will
 There are alternative codon mutagenesis protocols that *supposedly* given just single codon mutations.
 Here are some of these alternative protocols:
 
-    - `Firnberg and Ostermeier (2012) <PFunkel: efficient, expansive, user-defined mutagenesis>`_: this was also the first codon mutagenesis protocol described (to our knowledge)
+    - `Firnberg and Ostermeier (2012) <https://doi.org/10.1371/journal.pone.0052031>`_: Note that this was also the first codon mutagenesis protocol (to our knowledge)
 
     - `Jain and Varadarajan (2014) <https://doi.org/10.1016/j.ab.2013.12.002>`_
 
@@ -41,6 +41,7 @@ Here are some of these alternative protocols:
     - `Wrenbeck et al (2016) <http://www.nature.com/nmeth/journal/v13/n11/full/nmeth.4029.html>`_
 
 Our lab has **not** tested any of these other protocols, so we cannot offer advice on how well any of them work.
+We have heard anecdotally that some of them may work well, but others do not work as well as advertised.
 In principle, it could be desirable to use one of these other protocols to get only single mutants rather than a Poisson distribution of wildtype, single, and multiple mutants.
 If you do this it is worth looking carefully to see how the good the other protocols actually are at really getting only single mutants -- if you end up with 20% double mutants, that is barely better than a Poisson protocol.
 
