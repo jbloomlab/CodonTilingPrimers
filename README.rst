@@ -15,6 +15,7 @@ This protocol randomly mutates each codon to all other possible codons.
 The protocol was originally described in `Bloom (2014) <https://doi.org/10.1093/molbev/msu173>`_, and the methods section of that paper goes over the protocol in quite a bit of detail. Additionally, `here are Jesse's lab notes <JesseLabNotes.pdf>`_ for the codon mutagenesis experiments described in that paper.
 
 The protocol was subsequently improved by Adam Dingens by making the primers have roughly equal melting temperatures rather than equal lengths.
+We think that Adam's modification to use more equal melting temperatures improves the protocol by making the rate of mutation more uniform across the gene.
 These improvements are described in `Dingens et al (2017) <http://dx.doi.org/10.1016/j.chom.2017.05.003>`_ , and the script included in this repository (and described below) uses this improvement.
 
 A few important considerations that we have noted in this protocol:
