@@ -71,7 +71,7 @@ The script takes command line arguments; for a listing of how to provide the arg
 
     python create_primers.py -h
 
-For instance, the file `EN72_HA_primers.txt <EN72_HA_primers.txt>`_ included in the repository can be generated with::
+For instance, the file `EN72-HA_primers.txt <EN72-HA_primers.txt>`_ included in the repository can be generated with::
 
     python create_primers.py EN72-HA.txt EN72 1 En72-HA_primers.txt
 
