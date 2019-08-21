@@ -80,11 +80,13 @@ The script takes command line arguments; for a listing of how to provide the arg
 
 For instance, the file `EN72-HA_primers.txt <EN72-HA_primers.txt>`_ included in the repository can be generated with::
 
-    python create_primers.py EN72-HA.txt EN72 1 En72-HA_primers.txt
+    python create_primers.py EN72-HA.txt EN72 1 EN72-HA_primers.txt
 
-Note that the parent gene file (`EN72-HA.txt <EN72-HA.txt>`_ in this case) should have upper-case letters for the coding sequence to mutaten and lower case letters for the flanking region.
+Note that the parent gene file (`EN72-HA.txt <EN72-HA.txt>`_ in this case) should have upper-case letters for the coding sequence to mutate and lower case letters for the flanking region.
 
 There are a variety of optional parameters specifing primer length and melting temperature constraints; the default values for these optional parameters are displayed when you run the program with the ``-h`` option to get the help message.
+
+For instance, if you want to make ``NNS`` rather than ``NNN`` codon mutations, use the option ``--ambiguous_codon NNS``.
 
 You can also adjust the optional parameters described in the help message, such as::
 	
