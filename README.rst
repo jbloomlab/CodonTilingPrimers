@@ -89,7 +89,7 @@ There are a variety of optional parameters specifing primer length and melting t
 For instance, if you want to make ``NNS`` rather than ``NNN`` codon mutations, use the option ``--ambiguous_codon NNS``.
 
 You can also adjust the optional parameters described in the help message, such as::
-	
+
     python create_primers.py EN72-HA.txt EN72 2 EN72-HA_primers.txt --minprimertm 65 --maxprimertm 66
 
 The script works as follows:
@@ -102,13 +102,35 @@ The script works as follows:
 
     4) Note that because the primers are constrained to be between ``--minprimerlength`` and ``--maxprimerlength``, the Tm may not always fall between ``--minprimertm`` and ``--maxprimertm``. This can also happen if a primer initially exceeds ``--maxprimertm`` but the first trimming that drops it below this value also drops it below ``--minprimertm``, or vice-versa if the primer is being extended to increase its melting temperature.
 
-The  *Tm_NN* command of the `MeltingTemp module of Biopython <http://biopython.org/DIST/docs/api/Bio.SeqUtils.MeltingTemp-module.html>`_ is used to calculate Tm of primers. 
-This calculation is based on nearest neighbor thermodynamics; nucleotides labeled ``N`` are given average values in the Tm calculation. 
+The  *Tm_NN* command of the `MeltingTemp module of Biopython <http://biopython.org/DIST/docs/api/Bio.SeqUtils.MeltingTemp-module.html>`_ is used to calculate Tm of primers.
+This calculation is based on nearest neighbor thermodynamics; nucleotides labeled ``N`` are given average values in the Tm calculation.
 
 The result of running this script is the file specified by ``outfile``. It lists the primers. All of the forward primers are have names which are the prefix specified by ``primerprefix``, then ``-for-mut``, then the codon number starting with ``firstcodon``. The reverse primers are named similarly, but with the ``for`` replaced by ``rev``. The forward primers are grouped in sets of 96 (for ordering in 96-well plates), as are the reverse primers.
 The file `EN72-HA_primers.txt <EN72-HA_primers.txt>`_ shows an example output file.
 
+Ordering mutagenesis primers from IDT
+-------------------------------------
+Primers can be ordered in 96-well plates from IDT.
 
+First, manually generate an Excel document from the primer list text file output of ``create_primers.py`` in the appropriate format for submission:
+
+- Open this file with excel, using the comma as the delimiter.
+- Separate the plates, giving each plate its own spreadsheet.
+- Add a third column specifying the well position of each primer, going from A1-H12, with columns in the following order:
+
+    WellPosition, Name, Sequence.
+
+Then, upload this document to the IDT website.
+
+Set the IDT 96-well plate parameters:
+
+    - scale: 25 nmol DNA oligo
+    - purification: standard desalting
+    - plate type: deep-well plate
+    - ship option: wet
+    - buffer: IDTE pH 7.5
+    - normalization type: full yield
+    - concentration: 100 uM (volume option goes away)
 
 .. _`Bloom lab`: http://research.fhcrc.org/bloom/en.html
 .. _`IDT 96-well plate`: http://www.idtdna.com/pages/products/dna-rna/96-and-384-well-plates
