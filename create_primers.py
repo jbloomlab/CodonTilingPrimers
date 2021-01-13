@@ -51,7 +51,10 @@ def Parser():
     parser.add_argument('--minlength', type=int, help='Minimum primer length', default=25)
     parser.add_argument('--maxlength', type=int, help='Maximum primer length', default=51)
     parser.add_argument('--ambiguous_codon', choices={'NNN', 'NNS', 'NNK', 'NNC', 'NNG'},
-                        default='NNN', help='What ambiguous codon to use')
+                        default='NNN', help='What ambiguous codon to use'),
+    parser.add_argument('--output', choices={'plates', 'opools'}, default='plates',
+                        help='Format the final csv for ordering in plates or oligo pools.')
+
     return parser
 
 
@@ -106,7 +109,7 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, maxprimer
     for icodon in range(ncodons):
         i = startupper + icodon * 3
         primer = "%s%s%s" % (seq[i - initial_flanklength : i], ambiguous_codon, seq[i + 3 : i + 3 + initial_flanklength]) 
-        name = "%s-for-mut%d" % (prefix, firstcodon + icodon)
+        name = "%s-for-%s-mut%d" % (prefix, ambiguous_codon, firstcodon + icodon)
         primerseq = Seq(primer)
         
         TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) 
@@ -202,20 +205,34 @@ def main():
 
 
     print("\nNow writing these primers to %s" % outfile)
-    iplate = 1
-    f = open(outfile, 'w')
-    for primers in [mutforprimers, mutrevprimers]:
-        f.write("\r\nPlate %d\r\n" % iplate)
-        n_in_plate = 0
-        for (name, primer) in primers:
-            f.write("%s, %s\r\n" % (name, primer))
-            n_in_plate += 1
-            if n_in_plate == 96:
-                n_in_plate = 0
+
+    if args['output'] == 'plates':
+        iplate = 1
+        f = open(outfile, 'w')
+        for primers in [mutforprimers, mutrevprimers]:
+            f.write("\r\nPlate %d\r\n" % iplate)
+            n_in_plate = 0
+            for (name, primer) in primers:
+                f.write("%s, %s\r\n" % (name, primer))
+                n_in_plate += 1
+                if n_in_plate == 96:
+                    n_in_plate = 0
+                    iplate += 1
+                    f.write("\r\nPlate %d\r\n" % iplate)
+            if n_in_plate:
                 iplate += 1
-                f.write("\r\nPlate %d\r\n" % iplate)
-        if n_in_plate:
-            iplate += 1
+    elif args['output'] == 'opools':
+        f = open(outfile, 'w')
+        f.write("Pool name,Primer name,Sequence\r\n")
+        for primers in [mutforprimers, mutrevprimers]:
+            if primers == mutforprimers:
+                pool = f"{primerprefix}_ForPool"
+            elif primers == mutrevprimers:
+                pool = f"{primerprefix}_RevPool"
+            for (name, primer) in primers:
+                f.write("%s,%s,%s\r\n" % (pool, name, primer))
+    else:
+        raise ValueError(f"Invalid output of {args['output']}")
 
 
 
