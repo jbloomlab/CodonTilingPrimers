@@ -87,6 +87,7 @@ Note that the parent gene file (`EN72-HA.txt <EN72-HA.txt>`_ in this case) shoul
 There are a variety of optional parameters specifing primer length and melting temperature constraints; the default values for these optional parameters are displayed when you run the program with the ``-h`` option to get the help message.
 
 For instance, if you want to make ``NNS`` rather than ``NNN`` codon mutations, use the option ``--ambiguous_codon NNS``.
+Currently, ``NNN``, ``NNS``, ``NNK``, ``NNG``, and ``NNC`` are the supported ambiguous codons. 
 
 Additionally, the script has two ``--output`` options: ``plates`` and ``opools``. The ``plates`` output is the original output format that lists oligos in sets of 96 for ordering as plates from IDT. The ``opools`` output removes the plate separation and adds ``Pool name`` and ``Ambiguous codon`` columns. The ``Pool name`` column is necessary for ordering oPools from IDT and the ``Ambiguous codon`` column is to keep track of what ambiguous codon was used as it is necessary to make primers separately for ``NNG`` and ``NNC`` to create an ``NNS`` oligo pool. 
 
