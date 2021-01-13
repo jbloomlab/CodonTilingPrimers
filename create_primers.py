@@ -17,7 +17,12 @@ For command line arguments, run::
 
 The  Tm_NN command of the MeltingTemp Module of Biopython (http://biopython.org/DIST/docs/api/Bio.SeqUtils.MeltingTemp-module.html) is used to calculate Tm of primers. 
 This calculation is based on nearest neighbor thermodynamics. nucelotides labeled N are given average values in the Tm calculation. 
-It is possible to vary salt concentration and other addatives if needed."""
+It is possible to vary salt concentration and other addatives if needed.
+
+Edited by Kate Crawford January 2021 to include options for `NNG` and `NNC`
+ambiguous codons to simulate `NNS` mutagenesis as IDT oPools only allow for
+`N` or `K` ambiguous nucelotides.
+"""
 
 
 import os
@@ -45,8 +50,11 @@ def Parser():
     parser.add_argument('--minprimertm', type=float, help="Lower temperature limit for primers.", default=60)
     parser.add_argument('--minlength', type=int, help='Minimum primer length', default=25)
     parser.add_argument('--maxlength', type=int, help='Maximum primer length', default=51)
-    parser.add_argument('--ambiguous_codon', choices={'NNN', 'NNS', 'NNK'},
-                        default='NNN', help='What ambiguous codon to use')
+    parser.add_argument('--ambiguous_codon', choices={'NNN', 'NNS', 'NNK', 'NNC', 'NNG'},
+                        default='NNN', help='What ambiguous codon to use'),
+    parser.add_argument('--output', choices={'plates', 'opools'}, default='plates',
+                        help='Format the final csv for ordering in plates or oligo pools.')
+
     return parser
 
 
@@ -197,20 +205,34 @@ def main():
 
 
     print("\nNow writing these primers to %s" % outfile)
-    iplate = 1
-    f = open(outfile, 'w')
-    for primers in [mutforprimers, mutrevprimers]:
-        f.write("\r\nPlate %d\r\n" % iplate)
-        n_in_plate = 0
-        for (name, primer) in primers:
-            f.write("%s, %s\r\n" % (name, primer))
-            n_in_plate += 1
-            if n_in_plate == 96:
-                n_in_plate = 0
+
+    if args['output'] == 'plates':
+        iplate = 1
+        f = open(outfile, 'w')
+        for primers in [mutforprimers, mutrevprimers]:
+            f.write("\r\nPlate %d\r\n" % iplate)
+            n_in_plate = 0
+            for (name, primer) in primers:
+                f.write("%s, %s\r\n" % (name, primer))
+                n_in_plate += 1
+                if n_in_plate == 96:
+                    n_in_plate = 0
+                    iplate += 1
+                    f.write("\r\nPlate %d\r\n" % iplate)
+            if n_in_plate:
                 iplate += 1
-                f.write("\r\nPlate %d\r\n" % iplate)
-        if n_in_plate:
-            iplate += 1
+    elif args['output'] == 'opools':
+        f = open(outfile, 'w')
+        f.write("Pool name,Primer name,Ambiguous codon,Sequence\r\n")
+        for primers in [mutforprimers, mutrevprimers]:
+            if primers == mutforprimers:
+                pool = f"{primerprefix}_ForPool"
+            elif primers == mutrevprimers:
+                pool = f"{primerprefix}_RevPool"
+            for (name, primer) in primers:
+                f.write("%s,%s,%s,%s\r\n" % (pool, name, args['ambiguous_codon'], primer))
+    else:
+        raise ValueError(f"Invalid output of {args['output']}")
 
 
 
