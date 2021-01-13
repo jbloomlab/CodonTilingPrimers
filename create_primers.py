@@ -17,7 +17,12 @@ For command line arguments, run::
 
 The  Tm_NN command of the MeltingTemp Module of Biopython (http://biopython.org/DIST/docs/api/Bio.SeqUtils.MeltingTemp-module.html) is used to calculate Tm of primers. 
 This calculation is based on nearest neighbor thermodynamics. nucelotides labeled N are given average values in the Tm calculation. 
-It is possible to vary salt concentration and other addatives if needed."""
+It is possible to vary salt concentration and other addatives if needed.
+
+Edited by Kate Crawford January 2021 to include options for `NNG` and `NNC`
+ambiguous codons to simulate `NNS` mutagenesis as IDT oPools only allow for
+`N` or `K` ambiguous nucelotides.
+"""
 
 
 import os
@@ -45,7 +50,7 @@ def Parser():
     parser.add_argument('--minprimertm', type=float, help="Lower temperature limit for primers.", default=60)
     parser.add_argument('--minlength', type=int, help='Minimum primer length', default=25)
     parser.add_argument('--maxlength', type=int, help='Maximum primer length', default=51)
-    parser.add_argument('--ambiguous_codon', choices={'NNN', 'NNS', 'NNK'},
+    parser.add_argument('--ambiguous_codon', choices={'NNN', 'NNS', 'NNK', 'NNC', 'NNG'},
                         default='NNN', help='What ambiguous codon to use')
     return parser
 
