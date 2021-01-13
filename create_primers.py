@@ -109,7 +109,7 @@ def CreateMutForOligosVarLength(seq, primerlength, prefix, firstcodon, maxprimer
     for icodon in range(ncodons):
         i = startupper + icodon * 3
         primer = "%s%s%s" % (seq[i - initial_flanklength : i], ambiguous_codon, seq[i + 3 : i + 3 + initial_flanklength]) 
-        name = "%s-for-%s-mut%d" % (prefix, ambiguous_codon, firstcodon + icodon)
+        name = "%s-for-mut%d" % (prefix, firstcodon + icodon)
         primerseq = Seq(primer)
         
         TmNN = ('%0.2f' % mt.Tm_NN(primerseq, strict=False)) 
@@ -223,14 +223,14 @@ def main():
                 iplate += 1
     elif args['output'] == 'opools':
         f = open(outfile, 'w')
-        f.write("Pool name,Primer name,Sequence\r\n")
+        f.write("Pool name,Primer name,Ambiguous codon,Sequence\r\n")
         for primers in [mutforprimers, mutrevprimers]:
             if primers == mutforprimers:
                 pool = f"{primerprefix}_ForPool"
             elif primers == mutrevprimers:
                 pool = f"{primerprefix}_RevPool"
             for (name, primer) in primers:
-                f.write("%s,%s,%s\r\n" % (pool, name, primer))
+                f.write("%s,%s,%s,%s\r\n" % (pool, name, args['ambiguous_codon'], primer))
     else:
         raise ValueError(f"Invalid output of {args['output']}")
 
